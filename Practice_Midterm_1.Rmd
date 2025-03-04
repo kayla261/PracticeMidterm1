@@ -1,0 +1,66 @@
+---
+title: "Assignment 4- Running Forecast Models on Your Time Series"
+author: "Kayla Lindsley"
+date: "2025-02-28"
+output: html_document
+---
+
+```{r}
+library(fpp2)
+
+# plot & inference
+US_to_Australia <- arrivals[,4]
+plot(US_to_Australia)
+# Based on the plot of the time series of arrivals from the US to Australia we can see an obvious increase in the amount of arrivals from the US over the years with possible seasonality. 
+
+#Central Tendency 
+fivenum(US_to_Australia)
+# min: 23.7210
+# Q1: 63.9505
+# Median: 85.8780
+# Q3: 108.9770
+# Max: 136.0940
+mean(US_to_Australia)
+# Mean: 84.84876
+boxplot(US_to_Australia)
+# Looking at the median and mean as well as the boxplot we can see that the data is not perfectly distributed as the mean and median are ot equal. We can conclude that the data is slightly skewed to the right causing the mean to be slightly greater than the median. 
+
+# Decomp 
+decomp_arrivals <- decompose(US_to_Australia)
+plot(decomp_arrivals)
+# looking at the plot of the decomposition of the arrivals from the US to Australia we can see an obvious pattern within seasonality. From this we can conclude that the data is affected by seasonality.
+decomp_arrivals
+# The time series is additive
+# The seasonal quarterly indices are Q1 = 6.784749, Q2 = -7.969292, Q3 = -4.717247, Q4 = 5.901790
+# Q1 has the highest seasonal quarterly index at 6.784749 and Q2 has the lowest at -7.969292. 
+# Some reasons Q1 may be high and Q2 may be low is due to people going on vacation in Q1 meanwhile people are going back to work in Q2.  
+adj_arrivals <- seasadj(decomp_arrivals)
+plot(US_to_Australia)
+lines(adj_arrivals, col="Red")
+# The seasonality causes quarterly fluctuations however overall it does not change the trend/correlation of the overall data.
+
+# Naive Method
+naive_arrivals <- naive(US_to_Australia, 8)
+plot(naive_arrivals)
+resid_arrivals <- as.numeric(residuals(naive_arrivals)) 
+plot(resid_arrivals)
+# We can see there is no obvious pattern to the residuals and that it is mostly evenly distributed above and below 0. 
+hist(resid_arrivals)
+# Looking at the histogram of the residuals there are slightly more residuals that fall below 0 meaning that the forecast overestimated more than it under estimated. We also se a large concentration of residuals between 0 and 10 meaning our forecast over estimated the amount of arrivals from the US to Australia only by 1-10. 
+fitted_arrivals <- as.numeric(fitted(naive_arrivals)) 
+plot(fitted_arrivals, resid_arrivals)
+# The plot doesn't have a definitive pattern meaning that the Naive model is a good fit for the data.
+actual_arrivals <- as.numeric(US_to_Australia) 
+plot(actual_arrivals, resid_arrivals)
+# The plot has no plattern and no eggregious outliers thus the forecasting model is a relatively good fit for the data. 
+Acf(residuals(naive_arrivals))
+# From the ACF of the residuals we can see that there are a few residuals lags that fall within the bounds of insignificance meaning there is some noise within the data. We also see a pattern indicating seasonality.
+accuracy(naive_arrivals)
+naive_arrivals_1yr <- naive(US_to_Australia, 4)
+print(naive_arrivals_1yr)
+plot(naive_arrivals_1yr)
+accuracy(naive_arrivals_1yr)
+# The accuracy of the model is pretty good but there is likely a model that better suits the data. The ME = 0.5890794, RMSE = 12.51291, MAE = 9.689444, MPE = -0.2367242, MAPE = 11.82787, MASE = 1.312846, and ACF = -0.1743858, which arent bad. Based on the model the predicted arrivals for next year are 106.54. The simple model is a good forecasting model however there are better models that would beter account for the seasonality and noise in the data. 
+
+
+
